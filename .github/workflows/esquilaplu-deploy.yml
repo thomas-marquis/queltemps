@@ -12,6 +12,9 @@ jobs:
     if: ${{ (github.event_name == 'workflow_dispatch' && github.triggering_actor == github.repository_owner) || (github.event_name == 'push') }}
     steps:
       - uses: actions/checkout@v2
+
+      - run: git add -A && git commit -m "Release"
+
       - uses: akhileshns/heroku-deploy@v3.12.14
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
