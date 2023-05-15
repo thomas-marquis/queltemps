@@ -1,20 +1,20 @@
 name: Deploy Esquilaplu Webapp
 
-# on:
-#   push:
-#     branches:
-#       - master
-
-on: workflow_dispatch
+on:
+  # push:
+  #   branches:
+  #     - main 
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.triggering_actor == github.repository_owner) || (github.event_name == 'push') }}
     steps:
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.12.14
         with:
-          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: ""
-          heroku_email: ${{secrets.HEROKU_EMAIL}}
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: esquilaplu
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
           appdir: projects/esquilaplu-webapp
