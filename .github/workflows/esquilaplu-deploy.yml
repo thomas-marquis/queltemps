@@ -18,3 +18,4 @@ jobs:
           heroku_app_name: esquilaplu
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
           appdir: projects/esquilaplu-webapp
+          branch: main
