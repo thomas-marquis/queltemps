@@ -35,6 +35,10 @@ class WeatherRepository:
         data = pd.read_csv(data_object["Body"], sep=";", header=0, parse_dates=["date"])
         
         return data
+    
+    def list_datasets(self) -> list[str]:
+        response = self._s3_client.list_objects_v2(Bucket=self._aws_s3_bucket, Prefix=self._root_key)
+        return [content["Key"].lstrip(f"{self._root_key}/") for content in response["Contents"] if content["Key"] != self._root_key]
 
 
 
@@ -81,8 +85,7 @@ class WeatherChunk:
         
         
 class WeatherChunkFactory:
-    def __init__(self, data_dir_path: str) -> None:
-        self._data_dir_path = data_dir_path
+    def __init__(self) -> None:
         self._repository = WeatherRepository()
 
     def get_chunk_by_date_and_time(self, datetime: dt.datetime) -> WeatherChunk:
@@ -90,7 +93,7 @@ class WeatherChunkFactory:
         return WeatherChunk(data, datetime)
     
     def get_chunks_by_date(self, date: dt.date) -> list[WeatherChunk]:
-        all_saved_data_files = os.listdir(self._data_dir_path)
+        all_saved_data_files = self._repository.list_datasets()
         all_saved_data_files = [file for file in all_saved_data_files if file.startswith(date.isoformat())]
         all_saved_data_files.sort()
         
@@ -101,7 +104,7 @@ class WeatherChunkFactory:
         return chunks
     
     def list_saved_dataset_datetimes(self) -> list[dt.datetime]:
-        all_saved_data_files = os.listdir(self._data_dir_path)
+        all_saved_data_files = self._repository.list_datasets()
         all_saved_dt = [self._parse_datetime_from_filename(file) for file in all_saved_data_files if file.endswith(".csv")]
         all_saved_dt.sort()
 
@@ -124,7 +127,7 @@ def application():
     st.write("Bienvenue sur Esquilaplu, l'application qui permet de savoir quand et combien il a plu !")
 
 
-    factory = WeatherChunkFactory("data")
+    factory = WeatherChunkFactory()
     available_chunks = factory.list_saved_dataset_datetimes()
     
     selection: dt.date = st.date_input("Pluviométrie pour une date", available_chunks[-1], min_value=available_chunks[0], max_value=available_chunks[-1])
