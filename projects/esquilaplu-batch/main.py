@@ -6,6 +6,10 @@ import datetime as dt
 import pandas as pd
 import requests
 import os
+import boto3
+from dotenv import load_dotenv
+
+load_dotenv("secrets/.env")
 
 MAX_SCRAPPING = -1
 """Max number of data to scrap..
@@ -14,8 +18,30 @@ Set to -1 to scrap all available data.
 """
 
 
-def get_s3_client():
-    pass
+class WeatherRepository:
+    def __init__(self) -> None:
+        self._aws_s3_bucket = os.getenv("S3_BUCKET")
+        self._aws_access_key_id = os.getenv("ACCESS_KEY_ID")
+        self._aws_secret_access_key = os.getenv("SECRET_ACCESS_KEY")
+
+        self._root_key = "esquilaplu"
+        
+        self._s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=self._aws_access_key_id,
+            aws_secret_access_key=self._aws_secret_access_key,
+        )
+    
+    def list_datasets(self) -> list[str]:
+        response = self._s3_client.list_objects_v2(Bucket=self._aws_s3_bucket, Prefix=self._root_key)
+        return [content["Key"].lstrip(f"{self._root_key}/") for content in response["Contents"] if content["Key"] != self._root_key]
+
+    def save_dataset(self, dataset_id: str, dataset: pd.DataFrame) -> None:
+        data_key = f"{self._root_key}/{dataset_id}.csv"
+        data_buffer = io.StringIO()
+        dataset.to_csv(data_buffer, sep=";", index=False)
+        data_buffer.seek(0)
+        self._s3_client.put_object(Bucket=self._aws_s3_bucket, Key=data_key, Body=data_buffer.getvalue())
 
 
 def load_dataset(date: dt.datetime) -> pd.DataFrame:
@@ -52,9 +78,9 @@ def load_dataset(date: dt.datetime) -> pd.DataFrame:
 
 
 
-def save_dataset(dir_path: str, df: pd.DataFrame, datetime: dt.datetime) -> None:
-    path = f"{dir_path}/{datetime.date().isoformat()}-{datetime.hour}.csv"
-    df.to_csv(path, index=False, header=True, sep=";")
+def save_dataset(repository: WeatherRepository, df: pd.DataFrame, datetime: dt.datetime) -> None:
+    dataset_id = f"{datetime.date().isoformat()}-{datetime.hour}"
+    repository.save_dataset(dataset_id, df)
 
 
 
@@ -63,8 +89,8 @@ def _parse_datetime_from_filename(filename: str) -> dt.datetime:
     return dt.datetime.strptime(filename, "%Y-%m-%d-%H.csv")
 
 
-def list_saved_dataset_datetimes(dir_path: str, since: dt.datetime) -> list[dt.datetime]:
-    all_saved_data_files = os.listdir(dir_path)
+def list_saved_dataset_datetimes(repository: WeatherRepository, since: dt.datetime) -> list[dt.datetime]:
+    all_saved_data_files = repository.list_datasets()
     all_saved_dt = [_parse_datetime_from_filename(file) for file in all_saved_data_files if file.endswith(".csv")]
     all_saved_dt = [dt for dt in all_saved_dt if dt >= since]
     all_saved_dt.sort()
@@ -95,10 +121,10 @@ def get_oldest_available_datetime() -> dt.datetime:
 
 
 def main():
-    data_dir_path = "data"
+    repository = WeatherRepository()
 
     oldest_dt = get_oldest_available_datetime()
-    existing_datetimes = list_saved_dataset_datetimes(data_dir_path, oldest_dt)
+    existing_datetimes = list_saved_dataset_datetimes(repository, oldest_dt)
     
     newest_dt = dt.datetime.now() - dt.timedelta(hours=5)
     missing_dts = get_missing_datetimes(oldest_dt, newest_dt, existing_datetimes)
@@ -110,7 +136,7 @@ def main():
         wait_sec: float = random.uniform(0.5, 2.)
         time.sleep(wait_sec)
         
-        save_dataset(data_dir_path, df, missing_dt)
+        save_dataset(repository, df, missing_dt)
 
         i += 1
         if MAX_SCRAPPING > 0 and i >= MAX_SCRAPPING:

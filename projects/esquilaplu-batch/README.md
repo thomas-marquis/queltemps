@@ -6,6 +6,12 @@
 * S'assure de ne scrapper que les données des dates manquantes
 * Envoie les données sur un S3
 
+## Lancement
+
+```bash
+docker build -t test .
+docker run --rm -it -v "`pwd`/secrets:/app/secrets" --name test test
+```
 
 ## Ubiquitous language
 

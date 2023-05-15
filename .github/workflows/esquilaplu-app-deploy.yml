@@ -3,7 +3,9 @@ name: Deploy Esquilaplu Webapp
 on:
   push:
     branches:
-      - main 
+      - main
+    paths:
+      - projects/esquilaplu-app/**
   workflow_dispatch:
 
 jobs:
