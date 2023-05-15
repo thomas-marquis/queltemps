@@ -23,5 +23,5 @@ jobs:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: esquilaplu
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          appdir: projects/esquilaplu-webapp
+          appdir: projects/esquilaplu-app
           branch: main
