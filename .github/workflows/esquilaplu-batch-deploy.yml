@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: esqiulaplu-batch
+  IMAGE_NAME: esquilaplu-batch
 
 jobs:
   build-and-publish:
