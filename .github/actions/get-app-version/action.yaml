@@ -1,0 +1,25 @@
+name: Get app version
+author: Thomas Marquis
+description: Get app version from version file
+inputs:
+  versionFile:
+    description: Version file
+    required: false
+    default: VERSION
+  directory:
+    description: Directory
+    required: false
+    default: "."
+outputs:
+  version:
+    description: The app version
+    value: ${{ steps.getVersion.outputs.version }}
+runs:
+  using: composite
+  steps:
+    - run: ${{ github.action_path }}/entrypoint.sh ${{ github.workspace }}/${{ inputs.directory }}/${{ inputs.versionFile }}
+      id: getVersion
+      shell: bash
+branding:
+  color: gray-dark
+  icon: flag

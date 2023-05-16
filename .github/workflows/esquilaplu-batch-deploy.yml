@@ -1,0 +1,50 @@
+name: Deploy Esquilaplu Batch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - projects/esquilaplu-batch/**
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: esqiulaplu-batch
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.triggering_actor == github.repository_owner) || (github.event_name == 'push') }}
+    steps:
+
+      # Workaround: https://github.com/docker/build-push-action/issues/461
+      # https://github.com/docker/setup-buildx-action
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into Dockerhub registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          
+      - uses: actions/checkout@v3
+
+      - name: Get app current version
+        id: getAppVersion
+        uses: ./.github/actions/get-app-version
+        with:
+          versionFile: VERSION
+          directory: projects/esquilaplu-batch
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v3
+        with:
+          context: "./projects/esquilaplu-batch"
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.getAppVersion.outputs.version }}

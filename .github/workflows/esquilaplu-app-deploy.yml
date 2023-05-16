@@ -15,6 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # Doc: https://github.com/marketplace/actions/deploy-to-heroku
       - uses: akhileshns/heroku-deploy@v3.12.14
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
