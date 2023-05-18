@@ -88,7 +88,7 @@ jobs:
           SSH_PORT: ${{ secrets.VM_SSH_PORT }}
 
       - name: Pull new images
-        run: ssh staging 'docker pull $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION && docker pull $DOCKER_USERNAME/$IMAGE_NAME:latest'
+        run: ssh staging "docker pull $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION && docker pull $DOCKER_USERNAME/$IMAGE_NAME:latest"
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
