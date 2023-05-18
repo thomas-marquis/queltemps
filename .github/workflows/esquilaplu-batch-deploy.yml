@@ -73,10 +73,11 @@ jobs:
           mkdir -p ~/.ssh/
           echo "$SSH_KEY" > ~/.ssh/staging.key
           chmod 600 ~/.ssh/staging.key
-          cat >>~/.ssh/config <<END
+          cat >~/.ssh/config <<END
           Host staging
             HostName $SSH_HOST
             User $SSH_USER
+            Port $SSH_PORT
             IdentityFile ~/.ssh/staging.key
             StrictHostKeyChecking no
           END
@@ -84,6 +85,7 @@ jobs:
           SSH_USER: ${{ secrets.VM_USERNAME }}
           SSH_KEY: ${{ secrets.VM_SSH_KEY }}
           SSH_HOST: ${{ secrets.VM_HOST }}
+          SSH_PORT: ${{ secrets.VM_SSH_PORT }}
 
       - name: Pull new images
         run: ssh staging 'docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.getAppVersion.outputs.version }} && docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest'
