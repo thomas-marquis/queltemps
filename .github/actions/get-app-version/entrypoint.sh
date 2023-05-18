@@ -9,4 +9,4 @@ else
     exit 1
 fi
 
-echo "name=$version_value" >> $GITHUB_OUTPUT
+echo "version=$version_value" >> $GITHUB_OUTPUT
