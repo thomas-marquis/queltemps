@@ -9,4 +9,4 @@ else
     exit 1
 fi
 
-echo "::set-output name=version::$version_value"
+echo "name=$version_value" >> $GITHUB_OUTPUT

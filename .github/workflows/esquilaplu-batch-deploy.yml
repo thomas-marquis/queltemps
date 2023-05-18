@@ -67,6 +67,7 @@ jobs:
           versionFile: VERSION
           directory: projects/esquilaplu-batch
 
+      # See https://blog.benoitblanchon.fr/github-action-run-ssh-commands/
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
