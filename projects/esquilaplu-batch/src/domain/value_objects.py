@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import datetime as dt
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
