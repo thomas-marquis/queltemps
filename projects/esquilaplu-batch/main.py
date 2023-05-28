@@ -19,6 +19,7 @@ MAX_SCRAPPING = -1
 
 Set to -1 to scrap all available data.
 """
+MF_LAPS_DURATION = 3
 
 
 class WeatherRepository:
@@ -100,8 +101,14 @@ def _parse_datetime_from_filename(filename: str) -> dt.datetime:
 
 def get_available_laps_since(repository: WeatherRepository, since: dt.datetime) -> list[Laps]:
     all_saved_data_files = repository.list_datasets()
-    all_saved_dt = [_parse_datetime_from_filename(file) for file in all_saved_data_files if file.endswith(".csv")]
-    all_saved_dt = [Laps(start_time=dt, duration_hours=3) for dt in all_saved_dt if dt >= since]
+    all_saved_dt = [
+        _parse_datetime_from_filename(file) - dt.timedelta(hours=MF_LAPS_DURATION)
+        for file in all_saved_data_files
+        if file.endswith(".csv")
+    ]
+    all_saved_dt = [
+        Laps(start_time=saved_dt, duration_hours=MF_LAPS_DURATION) for saved_dt in all_saved_dt if saved_dt >= since
+    ]
 
     return all_saved_dt
 

@@ -22,9 +22,9 @@ class TestGetAvailableLapsSince:
         # Given
         mock_repository = MagicMock(spec=WeatherRepository)
         mock_repository.list_datasets.return_value = [
-            "2021-01-01-00.csv",
-            "2021-01-01-01.csv",
-            "2021-01-02-00.csv",
+            "2021-01-01-03.csv",
+            "2021-01-01-04.csv",
+            "2021-01-02-03.csv",
         ]
 
         # When
