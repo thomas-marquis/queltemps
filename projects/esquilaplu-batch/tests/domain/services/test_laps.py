@@ -10,32 +10,34 @@ from src.repository import WeatherRepository
 
 class TestLapsService:
     @pytest.fixture
-    def service(self):
-        return LapsService()
+    def mock_app_repository(self):
+        return MagicMock(spec=WeatherRepository)
+
+    @pytest.fixture
+    def service(self, mock_app_repository):
+        return LapsService(app_repository=mock_app_repository)
 
     class TestGetAvailableLapsSince:
-        def test_should_return_empty_list_when_no_file(self, service):
+        def test_should_return_empty_list_when_no_file(self, service, mock_app_repository):
             # Given
-            mock_repository = MagicMock(spec=WeatherRepository)
-            mock_repository.list_datasets.return_value = []
+            mock_app_repository.list_datasets.return_value = []
 
             # When
-            result = service.get_available_laps_since(mock_repository, dt.datetime(2021, 1, 1))
+            result = service.get_available_laps_since(dt.datetime(2021, 1, 1))
 
             # Then
             assert result == []
 
-        def test_should_list_existing_file_as_datetime(self, service):
+        def test_should_list_existing_file_as_datetime(self, service, mock_app_repository):
             # Given
-            mock_repository = MagicMock(spec=WeatherRepository)
-            mock_repository.list_datasets.return_value = [
+            mock_app_repository.list_datasets.return_value = [
                 "2021-01-01-03.csv",
                 "2021-01-01-04.csv",
                 "2021-01-02-03.csv",
             ]
 
             # When
-            result = service.get_available_laps_since(mock_repository, dt.datetime(2021, 1, 1, 1))
+            result = service.get_available_laps_since(dt.datetime(2021, 1, 1, 1))
 
             # Then
             assert result == [
