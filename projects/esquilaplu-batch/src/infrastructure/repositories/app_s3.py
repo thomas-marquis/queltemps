@@ -9,14 +9,14 @@ from src.domain.value_objects import Laps
 class AppS3Repository(AppRepository):
     MF_LAPS_DURATION = 3
 
-    def __init__(self) -> None:
-        self._aws_s3_bucket = ""
-        self._root_key = "esquilaplu"
+    def __init__(self, bucket: str, root_key: str, secret_key: str, access_key: str) -> None:
+        self._aws_s3_bucket = bucket
+        self._root_key = root_key
 
         self._s3_client = boto3.client(
             "s3",
-            aws_access_key_id=None,
-            aws_secret_access_key=None,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
         )
 
     def get_available_laps_since(self, since: dt.datetime) -> list[Laps]:

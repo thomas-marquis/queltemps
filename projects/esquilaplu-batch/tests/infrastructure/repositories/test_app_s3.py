@@ -17,7 +17,16 @@ class TestAppS3Repository:
 
     @pytest.fixture
     def repository(self):
-        return AppS3Repository()
+        return AppS3Repository(bucket="mybucket", root_key="esquilaplu", secret_key="azerty", access_key="coucou")
+
+    class TestInit:
+        def test_should_init_s3_client(self, repository, mock_boto3):
+            # Then
+            mock_boto3.client.assert_called_once_with(
+                "s3",
+                aws_access_key_id="coucou",
+                aws_secret_access_key="azerty",
+            )
 
     class TestGetAvailableLapsSince:
         def test_should_return_empty_list_when_no_file(self, repository, mock_s3_client):
@@ -31,6 +40,7 @@ class TestAppS3Repository:
 
             # Then
             assert result == []
+            mock_s3_client.list_objects_v2.assert_called_once_with(Bucket="mybucket", Prefix="esquilaplu")
 
         def test_should_list_existing_file_as_datetime(self, repository, mock_s3_client):
             # Given

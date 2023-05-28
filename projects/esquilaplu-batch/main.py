@@ -1,5 +1,6 @@
 import datetime as dt
 import io
+import os
 import random
 import time
 
@@ -65,7 +66,12 @@ def save_dataset(repository: WeatherRepository, df: pd.DataFrame, datetime: dt.d
 
 
 def main():
-    app_repository = AppS3Repository()
+    app_repository = AppS3Repository(
+        bucket=os.getenv("S3_BUCKET"),
+        root_key="esquilaplu",
+        secret_key=os.getenv("SECRET_ACCESS_KEY"),
+        access_key=os.getenv("ACCESS_KEY_ID"),
+    )
 
     legacy_repository = WeatherRepository()
     laps_service = LapsService(app_repository=app_repository)
