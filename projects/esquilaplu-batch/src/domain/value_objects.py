@@ -9,3 +9,8 @@ class Laps:
 
     def __lt__(self, other):
         return self.start_time < other.start_time
+
+    def __eq__(self, other):
+        if isinstance(other, dt.datetime):
+            return self.start_time == other
+        return self.start_time == other.start_time
