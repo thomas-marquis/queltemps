@@ -6,5 +6,5 @@ from ..value_objects import Laps
 
 class AppRepository(ABC):
     @abstractmethod
-    def get_available_laps_since(since: dt.datetime) -> list[Laps]:
+    def get_available_laps_since(self, since: dt.datetime) -> list[Laps]:
         raise NotImplementedError()

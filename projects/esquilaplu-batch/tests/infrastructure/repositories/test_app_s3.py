@@ -50,3 +50,7 @@ class TestAppS3Repository:
                 Laps(start_time=dt.datetime(2021, 1, 1, 1), duration_hours=3),
                 Laps(start_time=dt.datetime(2021, 1, 2, 0), duration_hours=3),
             ]
+
+
+# TODO: tester qu'on appel bien le bon bucket
+# TODO: tester qu'on init bien le client avec les bonnes credentials

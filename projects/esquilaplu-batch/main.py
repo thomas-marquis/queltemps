@@ -1,6 +1,5 @@
 import datetime as dt
 import io
-import os
 import random
 import time
 
@@ -11,6 +10,7 @@ from tqdm import tqdm
 
 from src.domain.services.laps import LapsService
 from src.repository import WeatherRepository
+from src.infrastructure.repositories.app_s3 import AppS3Repository
 
 load_dotenv("secrets/.env")
 
@@ -65,14 +65,14 @@ def save_dataset(repository: WeatherRepository, df: pd.DataFrame, datetime: dt.d
 
 
 def main():
-    repository = WeatherRepository()
-    laps_service = LapsService()
+    app_repository = AppS3Repository()
+    
+    legacy_repository = WeatherRepository()
+    laps_service = LapsService(app_repository=app_repository)
 
     start_time = dt.datetime.now() - dt.timedelta(days=14)
-    existing_datetimes = laps_service.get_available_laps_since(repository, since=start_time)
-
     end_time = dt.datetime.now() - dt.timedelta(hours=5)
-    missing_dts = laps_service.get_missing_laps(start_time, end_time, existing_datetimes)
+    missing_dts = laps_service.get_missing_laps(start_time, end_time)
 
     i = 0
     for missing_dt in tqdm(missing_dts):
@@ -81,7 +81,7 @@ def main():
         wait_sec: float = random.uniform(0.5, 2.0)
         time.sleep(wait_sec)
 
-        save_dataset(repository, df, missing_dt)
+        save_dataset(legacy_repository, df, missing_dt)
 
         i += 1
         if MAX_SCRAPPING > 0 and i >= MAX_SCRAPPING:

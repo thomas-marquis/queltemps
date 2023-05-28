@@ -1,6 +1,6 @@
 import datetime as dt
 
-from src.repository import WeatherRepository
+from src.domain.ports.outer import AppRepository
 
 from ..value_objects import Laps
 
@@ -8,10 +8,12 @@ from ..value_objects import Laps
 class LapsService:
     MF_LAPS_DURATION = 3
 
-    def __init__(self, app_repository: WeatherRepository) -> None:
+    def __init__(self, app_repository: AppRepository) -> None:
         self._app_repository = app_repository
 
-    def get_missing_laps(self, start_time: dt.datetime, end_time: dt.datetime, laps: list[Laps]) -> list[Laps]:
+    def get_missing_laps(self, start_time: dt.datetime, end_time: dt.datetime) -> list[Laps]:
+        laps = self._app_repository.get_available_laps_since(since=start_time)
+
         HOURS = [0, 3, 6, 9, 12, 15, 18, 21]
 
         missing_dts = []
@@ -27,22 +29,3 @@ class LapsService:
             current_dt += dt.timedelta(hours=3)
 
         return missing_dts
-
-    def get_available_laps_since(self, since: dt.datetime) -> list[Laps]:
-        all_saved_data_files = self._app_repository.list_datasets()
-        all_saved_dt = [
-            self._parse_datetime_from_filename(file) - dt.timedelta(hours=self.MF_LAPS_DURATION)
-            for file in all_saved_data_files
-            if file.endswith(".csv")
-        ]
-        all_saved_dt = [
-            Laps(start_time=saved_dt, duration_hours=self.MF_LAPS_DURATION)
-            for saved_dt in all_saved_dt
-            if saved_dt >= since
-        ]
-
-        return all_saved_dt
-
-    @staticmethod
-    def _parse_datetime_from_filename(filename: str) -> dt.datetime:
-        return dt.datetime.strptime(filename, "%Y-%m-%d-%H.csv")
