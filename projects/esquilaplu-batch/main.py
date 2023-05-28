@@ -8,6 +8,7 @@ import requests
 import os
 import boto3
 from dotenv import load_dotenv
+from src.domain.value_objects import Laps
 
 load_dotenv("secrets/.env")
 
@@ -89,11 +90,11 @@ def _parse_datetime_from_filename(filename: str) -> dt.datetime:
     return dt.datetime.strptime(filename, "%Y-%m-%d-%H.csv")
 
 
-def list_saved_dataset_datetimes(repository: WeatherRepository, since: dt.datetime) -> list[dt.datetime]:
+def get_available_laps_since(repository: WeatherRepository, since: dt.datetime) -> list[Laps]:
     all_saved_data_files = repository.list_datasets()
     all_saved_dt = [_parse_datetime_from_filename(file) for file in all_saved_data_files if file.endswith(".csv")]
-    all_saved_dt = [dt for dt in all_saved_dt if dt >= since]
-    all_saved_dt.sort()
+    all_saved_dt = [Laps(start_time=dt, duration_hours=3) for dt in all_saved_dt if dt >= since]
+
     return all_saved_dt
 
 
@@ -115,19 +116,14 @@ def get_missing_datetimes(start_dt: dt.datetime, end_dt: dt.datetime, list_dts: 
     return missing_dts
 
 
-def get_oldest_available_datetime() -> dt.datetime:
-    return dt.datetime.now() - dt.timedelta(days=14)
-
-
-
 def main():
     repository = WeatherRepository()
 
-    oldest_dt = get_oldest_available_datetime()
-    existing_datetimes = list_saved_dataset_datetimes(repository, oldest_dt)
+    start_time = dt.datetime.now() - dt.timedelta(days=14)
+    existing_datetimes = get_available_laps_since(repository, since=start_time)
     
-    newest_dt = dt.datetime.now() - dt.timedelta(hours=5)
-    missing_dts = get_missing_datetimes(oldest_dt, newest_dt, existing_datetimes)
+    end_time = dt.datetime.now() - dt.timedelta(hours=5)
+    missing_dts = get_missing_datetimes(start_time, end_time, existing_datetimes)
     
     i = 0
     for missing_dt in tqdm(missing_dts):

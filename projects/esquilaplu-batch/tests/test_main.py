@@ -1,25 +1,38 @@
-from main import get_oldest_available_datetime, list_saved_dataset_datetimes, get_missing_datetimes
+from main import get_available_laps_since, get_missing_datetimes, WeatherRepository
 import datetime as dt
+from src.domain.value_objects import Laps
+from unittest.mock import MagicMock
 
 
-
-class TestListSavedDatasetDatetimes:
+class TestGetAvailableLapsSince:
     def test_should_return_empty_list_when_no_file(self, tmp_path):
         # Given
+        mock_repository = MagicMock(spec=WeatherRepository)
+        mock_repository.list_datasets.return_value = []
+        
         # When
-        result = list_saved_dataset_datetimes(tmp_path, dt.datetime(2021, 1, 1))
+        result = get_available_laps_since(mock_repository, dt.datetime(2021, 1, 1))
+
         # Then
         assert result == []
         
     def test_should_list_existing_file_as_datetime(self, tmp_path):
         # Given
-        (tmp_path / "2021-01-01-00.csv").touch()
-        (tmp_path / "2021-01-01-01.csv").touch()
-        (tmp_path / "2021-01-02-00.csv").touch()
+        mock_repository = MagicMock(spec=WeatherRepository)
+        mock_repository.list_datasets.return_value = [
+            "2021-01-01-00.csv",
+            "2021-01-01-01.csv",
+            "2021-01-02-00.csv",
+        ]
+
         # When
-        result = list_saved_dataset_datetimes(tmp_path, dt.datetime(2021, 1, 1, 1))
+        result = get_available_laps_since(mock_repository, dt.datetime(2021, 1, 1, 1))
+
         # Then
-        assert result == [dt.datetime(2021, 1, 1, 1), dt.datetime(2021, 1, 2, 0)]
+        assert result == [
+            Laps(start_time=dt.datetime(2021, 1, 1, 1), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 2, 0), duration_hours=3),
+        ]
         
         
 class TestGetMissingDatetimes:
