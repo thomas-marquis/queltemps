@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 
 from src.domain.services.laps import LapsService
-from src.repository import WeatherRepository
 from src.infrastructure.repositories.app_s3 import AppS3Repository
+from src.repository import WeatherRepository
 
 load_dotenv("secrets/.env")
 
@@ -66,7 +66,7 @@ def save_dataset(repository: WeatherRepository, df: pd.DataFrame, datetime: dt.d
 
 def main():
     app_repository = AppS3Repository()
-    
+
     legacy_repository = WeatherRepository()
     laps_service = LapsService(app_repository=app_repository)
 

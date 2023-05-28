@@ -60,7 +60,6 @@ class TestLapsService:
             result = service.get_missing_laps(start_dt, end_dt)
 
             # Then
-            # assert result == [dt.datetime(2021, 1, 1, 12)]
             assert result == [
                 Laps(start_time=dt.datetime(2021, 1, 1, 12), duration_hours=3),
             ]
