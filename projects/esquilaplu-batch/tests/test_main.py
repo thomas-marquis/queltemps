@@ -1,7 +1,7 @@
 import datetime as dt
 from unittest.mock import MagicMock
 
-from main import WeatherRepository, get_available_laps_since, get_missing_datetimes
+from main import WeatherRepository, get_available_laps_since, get_missing_laps
 
 from src.domain.value_objects import Laps
 
@@ -37,24 +37,24 @@ class TestGetAvailableLapsSince:
         ]
 
 
-class TestGetMissingDatetimes:
+class TestGetMissingLaps:
     def test_should_return_empty_list_when_no_missing(self):
         # Given
         start_dt = dt.datetime(2021, 1, 1, 0)
         end_dt = dt.datetime(2021, 1, 1, 23)
-        list_dts = [
-            dt.datetime(2021, 1, 1, 0),
-            dt.datetime(2021, 1, 1, 3),
-            dt.datetime(2021, 1, 1, 6),
-            dt.datetime(2021, 1, 1, 9),
-            dt.datetime(2021, 1, 1, 12),
-            dt.datetime(2021, 1, 1, 15),
-            dt.datetime(2021, 1, 1, 18),
-            dt.datetime(2021, 1, 1, 21),
+        available_laps = [
+            Laps(start_time=dt.datetime(2021, 1, 1, 0), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 3), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 6), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 9), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 12), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 15), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 18), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 21), duration_hours=3),
         ]
 
         # When
-        result = get_missing_datetimes(start_dt, end_dt, list_dts)
+        result = get_missing_laps(start_dt, end_dt, available_laps)
 
         # Then
         assert result == []
@@ -63,70 +63,73 @@ class TestGetMissingDatetimes:
         # Given
         start_dt = dt.datetime(2021, 1, 1, 0)
         end_dt = dt.datetime(2021, 1, 1, 23)
-        list_dts = [
-            dt.datetime(2021, 1, 1, 0),
-            dt.datetime(2021, 1, 1, 3),
-            dt.datetime(2021, 1, 1, 6),
-            dt.datetime(2021, 1, 1, 9),
-            dt.datetime(2021, 1, 1, 15),
-            dt.datetime(2021, 1, 1, 18),
-            dt.datetime(2021, 1, 1, 21),
+        available_laps = [
+            Laps(start_time=dt.datetime(2021, 1, 1, 0), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 3), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 6), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 9), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 15), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 18), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 21), duration_hours=3),
         ]
 
         # When
-        result = get_missing_datetimes(start_dt, end_dt, list_dts)
+        result = get_missing_laps(start_dt, end_dt, available_laps)
 
         # Then
-        assert result == [dt.datetime(2021, 1, 1, 12)]
+        # assert result == [dt.datetime(2021, 1, 1, 12)]
+        assert result == [
+            Laps(start_time=dt.datetime(2021, 1, 1, 12), duration_hours=3),
+        ]
 
     def test_should_return_many_missing_dt_when_several_missing(self):
         # Given
         start_dt = dt.datetime(2021, 1, 1, 1)
         end_dt = dt.datetime(2021, 1, 1, 23)
-        list_dts = [
-            dt.datetime(2021, 1, 1, 0),
-            dt.datetime(2021, 1, 1, 3),
-            dt.datetime(2021, 1, 1, 9),
-            dt.datetime(2021, 1, 1, 15),
-            dt.datetime(2021, 1, 1, 18),
-            dt.datetime(2021, 1, 1, 21),
+        available_laps = [
+            Laps(start_time=dt.datetime(2021, 1, 1, 0), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 3), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 9), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 15), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 18), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 21), duration_hours=3),
         ]
 
         # When
-        result = get_missing_datetimes(start_dt, end_dt, list_dts)
+        result = get_missing_laps(start_dt, end_dt, available_laps)
 
         # Then
         assert result == [
-            dt.datetime(2021, 1, 1, 6),
-            dt.datetime(2021, 1, 1, 12),
+            Laps(start_time=dt.datetime(2021, 1, 1, 6), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 12), duration_hours=3),
         ]
 
     def test_should_return_missing_dt_from_many_days(self):
         # Given
         start_dt = dt.datetime(2021, 1, 1, 0)
         end_dt = dt.datetime(2021, 1, 2, 21)
-        list_dts = [
-            dt.datetime(2021, 1, 1, 3),
-            dt.datetime(2021, 1, 1, 9),
-            dt.datetime(2021, 1, 1, 15),
-            dt.datetime(2021, 1, 1, 18),
-            dt.datetime(2021, 1, 1, 21),
-            dt.datetime(2021, 1, 2, 0),
-            dt.datetime(2021, 1, 2, 3),
-            dt.datetime(2021, 1, 2, 9),
-            dt.datetime(2021, 1, 2, 15),
-            dt.datetime(2021, 1, 2, 18),
+        available_laps = [
+            Laps(start_time=dt.datetime(2021, 1, 1, 3), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 9), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 15), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 18), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 21), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 2, 0), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 2, 3), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 2, 9), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 2, 15), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 2, 18), duration_hours=3),
         ]
 
         # When
-        result = get_missing_datetimes(start_dt, end_dt, list_dts)
+        result = get_missing_laps(start_dt, end_dt, available_laps)
 
         # Then
         assert result == [
-            dt.datetime(2021, 1, 1, 0),
-            dt.datetime(2021, 1, 1, 6),
-            dt.datetime(2021, 1, 1, 12),
-            dt.datetime(2021, 1, 2, 6),
-            dt.datetime(2021, 1, 2, 12),
-            dt.datetime(2021, 1, 2, 21),
+            Laps(start_time=dt.datetime(2021, 1, 1, 0), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 6), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 1, 12), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 2, 6), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 2, 12), duration_hours=3),
+            Laps(start_time=dt.datetime(2021, 1, 2, 21), duration_hours=3),
         ]

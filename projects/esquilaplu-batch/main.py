@@ -106,19 +106,19 @@ def get_available_laps_since(repository: WeatherRepository, since: dt.datetime) 
     return all_saved_dt
 
 
-def get_missing_datetimes(start_dt: dt.datetime, end_dt: dt.datetime, list_dts: dt.datetime) -> list[dt.datetime]:
+def get_missing_laps(start_time: dt.datetime, end_time: dt.datetime, laps: list[Laps]) -> list[Laps]:
     HOURS = [0, 3, 6, 9, 12, 15, 18, 21]
 
     missing_dts = []
-    current_dt = dt.datetime(start_dt.year, start_dt.month, start_dt.day, 0)
+    current_dt = dt.datetime(start_time.year, start_time.month, start_time.day, 0)
 
-    while current_dt <= end_dt:
+    while current_dt <= end_time:
         if current_dt.hour not in HOURS:
             current_dt += dt.timedelta(hours=1)
             continue
 
-        if current_dt not in list_dts:
-            missing_dts.append(current_dt)
+        if current_dt not in laps:
+            missing_dts.append(Laps(start_time=current_dt, duration_hours=3))
         current_dt += dt.timedelta(hours=3)
 
     return missing_dts
@@ -131,7 +131,7 @@ def main():
     existing_datetimes = get_available_laps_since(repository, since=start_time)
 
     end_time = dt.datetime.now() - dt.timedelta(hours=5)
-    missing_dts = get_missing_datetimes(start_time, end_time, existing_datetimes)
+    missing_dts = get_missing_laps(start_time, end_time, existing_datetimes)
 
     i = 0
     for missing_dt in tqdm(missing_dts):
