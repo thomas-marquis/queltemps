@@ -9,7 +9,8 @@ import requests
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from src.domain.services.laps import LapsService
+from src.domain.services.laps import LapsServiceImpl
+from src.domain.services.record import RecordServiceImpl
 from src.infrastructure.repositories.app_s3 import AppS3Repository
 from src.repository import WeatherRepository
 
@@ -74,7 +75,17 @@ def main():
     )
 
     legacy_repository = WeatherRepository()
-    laps_service = LapsService(app_repository=app_repository)
+    laps_service = LapsServiceImpl(app_repository=app_repository)
+
+    record_service = RecordServiceImpl(
+        app_repository=app_repository,
+        max_collect_history_hr=14 * 24,
+        min_collect_history_hr=5,
+        now=dt.datetime.now(),
+        weather_repository=...,
+    )
+
+    record_service.update_records()
 
     start_time = dt.datetime.now() - dt.timedelta(days=14)
     end_time = dt.datetime.now() - dt.timedelta(hours=5)

@@ -1,11 +1,12 @@
 import datetime as dt
 
+from src.domain.ports.inner import LapService
 from src.domain.ports.outer import AppRepository
 
 from ..value_objects import Laps
 
 
-class LapsService:
+class LapsServiceImpl(LapService):
     MF_LAPS_DURATION = 3
 
     def __init__(self, app_repository: AppRepository) -> None:

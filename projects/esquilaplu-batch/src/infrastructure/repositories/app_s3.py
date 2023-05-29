@@ -2,6 +2,7 @@ import datetime as dt
 
 import boto3
 
+from src.domain.entities import Record
 from src.domain.ports.outer import AppRepository
 from src.domain.value_objects import Laps
 
@@ -33,6 +34,9 @@ class AppS3Repository(AppRepository):
         ]
 
         return all_saved_dt
+
+    def save_many_records(self, records: list[Record]) -> None:
+        raise NotImplementedError()
 
     def _list_existing_files(self) -> list[str]:
         response = self._s3_client.list_objects_v2(Bucket=self._aws_s3_bucket, Prefix=self._root_key)

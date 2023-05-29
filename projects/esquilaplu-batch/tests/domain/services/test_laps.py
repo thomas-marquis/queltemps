@@ -4,18 +4,18 @@ from unittest.mock import MagicMock
 import pytest
 
 from src.domain.ports.outer import AppRepository
-from src.domain.services.laps import LapsService
+from src.domain.services.laps import LapsServiceImpl
 from src.domain.value_objects import Laps
 
 
-class TestLapsService:
+class TestLapsServiceImpl:
     @pytest.fixture
     def mock_app_repository(self):
         return MagicMock(spec=AppRepository)
 
     @pytest.fixture
     def service(self, mock_app_repository):
-        return LapsService(app_repository=mock_app_repository)
+        return LapsServiceImpl(app_repository=mock_app_repository)
 
     class TestGetMissingLaps:
         def test_should_return_empty_list_when_no_missing(self, service, mock_app_repository):
