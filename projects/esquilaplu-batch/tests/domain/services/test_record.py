@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, call
 import pytest
 
 from src.domain.entities import Record
+from src.domain.exceptions import WeatherCollectionError
 from src.domain.ports.inner import LapService
 from src.domain.ports.outer import AppRepository, WeatherDataRepository
 from src.domain.services.record import RecordServiceImpl
@@ -123,5 +124,31 @@ class TestRecordServiceImpl:
                 [
                     call(laps=Laps(start_time=dt.datetime(2021, 1, 16, 10, 0, 0), duration_hours=3)),
                     call(laps=Laps(start_time=dt.datetime(2021, 1, 16, 13, 0, 0), duration_hours=3)),
+                ]
+            )
+
+        def test_should_ignore_collection_error(
+            self, mock_lap_service, mock_weather_repository, service, mock_app_repository
+        ):
+            # Given
+            mock_lap_service.get_missing_laps.return_value = [
+                Laps(start_time=dt.datetime(2021, 1, 16, 10, 0, 0), duration_hours=3),
+                Laps(start_time=dt.datetime(2021, 1, 16, 13, 0, 0), duration_hours=3),
+                Laps(start_time=dt.datetime(2021, 1, 16, 16, 0, 0), duration_hours=3),
+            ]
+            mock_weather_repository.collect_record.side_effect = [
+                Record(laps=Laps(start_time=dt.datetime(2021, 1, 16, 10, 0, 0), duration_hours=3), rainfall_mm=0.1),
+                WeatherCollectionError(),
+                Record(laps=Laps(start_time=dt.datetime(2021, 1, 16, 16, 0, 0), duration_hours=3), rainfall_mm=0.3),
+            ]
+
+            # When
+            service.update_records()
+
+            # Then
+            mock_app_repository.save_many_records.assert_called_once_with(
+                records=[
+                    Record(laps=Laps(start_time=dt.datetime(2021, 1, 16, 10, 0, 0), duration_hours=3), rainfall_mm=0.1),
+                    Record(laps=Laps(start_time=dt.datetime(2021, 1, 16, 16, 0, 0), duration_hours=3), rainfall_mm=0.3),
                 ]
             )
