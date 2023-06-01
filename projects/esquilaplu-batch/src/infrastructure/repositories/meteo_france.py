@@ -48,6 +48,7 @@ class MeteoFranceRepository(WeatherDataRepository):
             raise WeatherCollectionError()
 
         dataframe = pd.read_csv(io.StringIO(response.text), sep=";", header=0)
+        dataframe = dataframe.replace("mq", 0)
         dataframe["date"] = laps.start_time + dt.timedelta(hours=laps.duration_hours)
         dataframe = dataframe.astype(
             {
