@@ -30,7 +30,7 @@ class WeatherRepository:
         )
         
     def load_dataset(self, dataset_id: str) -> pd.DataFrame:
-        data_key = f"{self._root_key}/{dataset_id}.csv"
+        data_key = f"{self._root_key}/raw/meteofrance/{dataset_id}.csv"
         data_object = self._s3_client.get_object(Bucket=self._aws_s3_bucket, Key=data_key)
         data = pd.read_csv(data_object["Body"], sep=";", header=0, parse_dates=["date"])
         

@@ -37,7 +37,7 @@ class WeatherRepository:
         return [content["Key"].lstrip(f"{self._root_key}/") for content in response["Contents"] if content["Key"] != self._root_key]
 
     def save_dataset(self, dataset_id: str, dataset: pd.DataFrame) -> None:
-        data_key = f"{self._root_key}/{dataset_id}.csv"
+        data_key = f"{self._root_key}/raw/meteofrance/{dataset_id}.csv"
         data_buffer = io.StringIO()
         dataset.to_csv(data_buffer, sep=";", index=False)
         data_buffer.seek(0)
