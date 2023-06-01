@@ -1,10 +1,9 @@
 import datetime as dt
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 import requests
 
-from src.domain.entities import Record
 from src.domain.exceptions import WeatherCollectionError
 from src.domain.value_objects import Laps
 from src.infrastructure.repositories.meteo_france import MeteoFranceRepository
