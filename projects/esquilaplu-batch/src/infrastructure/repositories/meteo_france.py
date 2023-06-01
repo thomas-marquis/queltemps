@@ -1,5 +1,8 @@
+import datetime as dt
+import io
 import logging
 
+import pandas as pd
 import requests
 from requests.exceptions import HTTPError
 
@@ -7,6 +10,7 @@ from src.domain.entities import Record
 from src.domain.exceptions import WeatherCollectionError
 from src.domain.ports.outer import WeatherDataRepository
 from src.domain.value_objects import Laps
+from src.infrastructure.factories.mf_record import MeteoFranceRecordFactory
 
 
 class MeteoFranceRepository(WeatherDataRepository):
@@ -40,3 +44,18 @@ class MeteoFranceRepository(WeatherDataRepository):
         except HTTPError as e:
             self._logger.error(f"Error while collecting weather data: {e}")
             raise WeatherCollectionError()
+
+        dataframe = pd.read_csv(io.StringIO(response.text), sep=";", header=0)
+        dataframe["date"] = laps.start_time + dt.timedelta(hours=laps.duration_hours)
+        dataframe = dataframe.astype(
+            {
+                "date": "datetime64[ns]",
+                "rr1": "float64",
+                "rr3": "float64",
+                "rr6": "float64",
+                "rr12": "float64",
+                "rr24": "float64",
+            }
+        )
+
+        return MeteoFranceRecordFactory.from_dataframe(dataframe, laps_duration_hr=3)
