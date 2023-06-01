@@ -11,11 +11,13 @@ from src.domain.exceptions import WeatherCollectionError
 from src.domain.ports.outer import WeatherDataRepository
 from src.domain.value_objects import Laps
 from src.infrastructure.factories.mf_record import MeteoFranceRecordFactory
+from src.infrastructure.repositories.app_s3 import AppS3Repository
 
 
 class MeteoFranceRepository(WeatherDataRepository):
-    def __init__(self) -> None:
+    def __init__(self, app_repository: AppS3Repository) -> None:
         self._logger = logging.getLogger(__name__)
+        self._app_repository = app_repository
 
     def collect_record(self, laps: Laps) -> Record:
         hour = laps.start_time.hour + laps.duration_hours
@@ -57,5 +59,7 @@ class MeteoFranceRepository(WeatherDataRepository):
                 "rr24": "float64",
             }
         )
+
+        self._app_repository.save_raw_dataset(dataset=dataframe, laps=laps)
 
         return MeteoFranceRecordFactory.from_dataframe(dataframe, laps_duration_hr=3)

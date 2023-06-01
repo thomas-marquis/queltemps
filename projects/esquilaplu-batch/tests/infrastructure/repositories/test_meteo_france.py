@@ -8,6 +8,7 @@ from easy_testing import DataFrameBuilder, assert_called_once_with_frame
 from src.domain.entities import Record
 from src.domain.exceptions import WeatherCollectionError
 from src.domain.value_objects import Laps
+from src.infrastructure.repositories.app_s3 import AppS3Repository
 from src.infrastructure.repositories.meteo_france import MeteoFranceRepository
 
 
@@ -25,8 +26,12 @@ class TestMeteoFranceRepository:
         return mock
 
     @pytest.fixture
-    def repository(self):
-        return MeteoFranceRepository()
+    def mock_app_repository(self):
+        return MagicMock(spec=AppS3Repository)
+
+    @pytest.fixture
+    def repository(self, mock_app_repository):
+        return MeteoFranceRepository(app_repository=mock_app_repository)
 
     class TestCollectRecord:
         def test_should_call_requests_get_with_expected_url(self, repository, mock_requests):
@@ -100,5 +105,42 @@ class TestMeteoFranceRepository:
             # Then
             assert_called_once_with_frame(mock_factory.from_dataframe, dataframe, laps_duration_hr=3)
             assert result == expected
+
+        def test_should_save_raw_dataset_to_app_repository(
+            self, repository, mock_requests, mock_factory, mock_app_repository
+        ):
+            # Given
+            mock_requests.get.return_value = MagicMock(
+                text="date;numer_sta;rr1;rr3;rr6;rr12;rr24\n2021-01-30;7510;0.1;0.2;0.3;0.4;0.5"
+            )
+            dataframe = (
+                DataFrameBuilder.a_dataframe()
+                .with_columns(["date", "numer_sta", "rr1", "rr3", "rr6", "rr12", "rr24"])
+                .with_dtypes(
+                    date="datetime64[ns]", rr1="float64", rr3="float64", rr6="float64", rr12="float64", rr24="float64"
+                )
+                .with_row(
+                    date=dt.datetime(2021, 1, 30, 13, 0, 0),
+                    numer_sta=7510,
+                    rr1=0.1,
+                    rr3=0.2,
+                    rr6=0.3,
+                    rr12=0.4,
+                    rr24=0.5,
+                )
+                .build()
+            )
+            laps = Laps(start_time=dt.datetime(2021, 1, 30, 10, 0, 0), duration_hours=3)
+            expected = Record(
+                laps=Laps(start_time=dt.datetime(2021, 1, 30, 10, 0, 0), duration_hours=3),
+                rainfall_mm=0.2,
+            )
+            mock_factory.from_dataframe.return_value = expected
+
+            # When
+            repository.collect_record(laps)
+
+            # Then
+            assert_called_once_with_frame(mock_app_repository.save_raw_dataset, dataset=dataframe, laps=laps)
 
         # TODO: gérer le cas des mq
