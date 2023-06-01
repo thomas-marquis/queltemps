@@ -1,12 +1,10 @@
 import datetime as dt
 
 import pytest
-from unittest.mock import MagicMock
+from easy_testing import DataFrameBuilder
+
 from src.domain.value_objects import Laps
 from src.infrastructure.repositories.app_s3 import AppS3Repository
-
-
-from easy_testing import DataFrameBuilder
 
 
 class TestAppS3Repository:
@@ -63,7 +61,6 @@ class TestAppS3Repository:
                 Laps(start_time=dt.datetime(2021, 1, 1, 1), duration_hours=3),
                 Laps(start_time=dt.datetime(2021, 1, 2, 0), duration_hours=3),
             ]
-
 
         # TODO: récupérer les données au bon endroit
 

@@ -1,8 +1,8 @@
 import datetime as dt
-from typing import Any
 
 import boto3
 import pandas as pd
+
 from src.domain.entities import Record
 from src.domain.ports.outer import AppRepository
 from src.domain.value_objects import Laps
@@ -38,11 +38,11 @@ class AppS3Repository(AppRepository):
 
     def save_many_records(self, records: list[Record]) -> None:
         raise NotImplementedError()
-    
+
     def save_raw_dataset(self, dataset: pd.DataFrame, laps: Laps) -> None:
         data_to_save = dataset.copy()
         data_to_save["date"] = data_to_save["date"].apply(lambda x: x.strftime("%Y-%m-%d"))
-        
+
         filename = f"{laps.start_time.strftime('%Y-%m-%d-%H')}.csv"
         key = f"{self._root_key}/raw/meteofrance/{filename}"
         self._s3_client.put_object(

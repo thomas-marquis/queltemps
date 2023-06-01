@@ -100,5 +100,5 @@ class TestMeteoFranceRepository:
             # Then
             assert_called_once_with_frame(mock_factory.from_dataframe, dataframe, laps_duration_hr=3)
             assert result == expected
-            
+
         # TODO: gérer le cas des mq
