@@ -8,7 +8,6 @@ from easy_testing import DataFrameBuilder, assert_called_once_with_frame
 from src.domain.entities import Record
 from src.domain.exceptions import WeatherCollectionError
 from src.domain.value_objects import Laps
-from src.infrastructure.factories.mf_record import MeteoFranceRecordFactory
 from src.infrastructure.repositories.meteo_france import MeteoFranceRepository
 
 
@@ -101,3 +100,5 @@ class TestMeteoFranceRepository:
             # Then
             assert_called_once_with_frame(mock_factory.from_dataframe, dataframe, laps_duration_hr=3)
             assert result == expected
+            
+        # TODO: gérer le cas des mq
