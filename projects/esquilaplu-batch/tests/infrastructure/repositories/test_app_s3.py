@@ -41,15 +41,17 @@ class TestAppS3Repository:
 
             # Then
             assert result == []
-            mock_s3_client.list_objects_v2.assert_called_once_with(Bucket="mybucket", Prefix="esquilaplu")
+            mock_s3_client.list_objects_v2.assert_called_once_with(
+                Bucket="mybucket", Prefix="esquilaplu/raw/meteofrance"
+            )
 
         def test_should_list_existing_file_as_datetime(self, repository, mock_s3_client):
             # Given
             mock_s3_client.list_objects_v2.return_value = {
                 "Contents": [
-                    {"Key": "esquilaplu/2021-01-01-03.csv"},
-                    {"Key": "esquilaplu/2021-01-01-04.csv"},
-                    {"Key": "esquilaplu/2021-01-02-03.csv"},
+                    {"Key": "esquilaplu/raw/meteofrance/2021-01-01-03.csv"},
+                    {"Key": "esquilaplu/raw/meteofrance/2021-01-01-04.csv"},
+                    {"Key": "esquilaplu/raw/meteofrance/2021-01-02-03.csv"},
                 ],
             }
 
@@ -61,8 +63,6 @@ class TestAppS3Repository:
                 Laps(start_time=dt.datetime(2021, 1, 1, 1), duration_hours=3),
                 Laps(start_time=dt.datetime(2021, 1, 2, 0), duration_hours=3),
             ]
-
-        # TODO: récupérer les données au bon endroit
 
     class TestSaveRawDataset:
         def test_should_save_dataframe_to_s3_as_csv(self, repository, mock_s3_client):

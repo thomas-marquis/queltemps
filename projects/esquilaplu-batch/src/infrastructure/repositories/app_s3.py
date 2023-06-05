@@ -52,7 +52,9 @@ class AppS3Repository(AppRepository):
         )
 
     def _list_existing_files(self) -> list[str]:
-        response = self._s3_client.list_objects_v2(Bucket=self._aws_s3_bucket, Prefix=self._root_key)
+        response = self._s3_client.list_objects_v2(
+            Bucket=self._aws_s3_bucket, Prefix=f"{self._root_key}/raw/meteofrance"
+        )
         return [
             content["Key"].lstrip(f"{self._root_key}/")
             for content in response["Contents"]
@@ -61,4 +63,4 @@ class AppS3Repository(AppRepository):
 
     @staticmethod
     def _parse_datetime_from_filename(filename: str) -> dt.datetime:
-        return dt.datetime.strptime(filename, "%Y-%m-%d-%H.csv")
+        return dt.datetime.strptime(filename, "raw/meteofrance/%Y-%m-%d-%H.csv")
