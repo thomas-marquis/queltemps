@@ -1,8 +1,10 @@
 import datetime as dt
+from unittest.mock import call
 
 import pytest
 from easy_testing import DataFrameBuilder
 
+from src.domain.entities import Record
 from src.domain.value_objects import Laps
 from src.infrastructure.repositories.app_s3 import AppS3Repository
 
@@ -95,4 +97,41 @@ class TestAppS3Repository:
                 Bucket="mybucket",
                 Key="esquilaplu/raw/meteofrance/2021-01-01-01.csv",
                 Body=expected_csv,
+            )
+
+    class TestSaveManyRecords:
+        def test_should_save_records_to_s3_as_one_json_file_per_record(self, repository, mock_s3_client):
+            # Given
+            records = [
+                Record(laps=Laps(start_time=dt.datetime(2021, 1, 29, 21), duration_hours=3), rainfall_mm=0.1),
+                Record(laps=Laps(start_time=dt.datetime(2021, 1, 30, 0), duration_hours=3), rainfall_mm=0.2),
+                Record(laps=Laps(start_time=dt.datetime(2021, 1, 30, 3), duration_hours=3), rainfall_mm=0.3),
+            ]
+
+            # When
+            repository.save_many_records(records)
+
+            # Then
+            assert mock_s3_client.put_object.call_count == 3
+            mock_s3_client.put_object.assert_has_calls(
+                [
+                    call(
+                        Bucket="mybucket",
+                        Key="esquilaplu/processed/records/2021/01/29/21.json",
+                        Body='{"data": '
+                        '{"laps": {"start_time": "2021-01-29 21:00:00", "duration_hours": 3}, "rainfall_mm": 0.1}}',
+                    ),
+                    call(
+                        Bucket="mybucket",
+                        Key="esquilaplu/processed/records/2021/01/30/00.json",
+                        Body='{"data": '
+                        '{"laps": {"start_time": "2021-01-30 00:00:00", "duration_hours": 3}, "rainfall_mm": 0.2}}',
+                    ),
+                    call(
+                        Bucket="mybucket",
+                        Key="esquilaplu/processed/records/2021/01/30/03.json",
+                        Body='{"data": '
+                        '{"laps": {"start_time": "2021-01-30 03:00:00", "duration_hours": 3}, "rainfall_mm": 0.3}}',
+                    ),
+                ]
             )

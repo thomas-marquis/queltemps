@@ -30,3 +30,20 @@ class TestRecord:
         assert len(result) == 1
         assert record1 in result
         assert record2 in result
+
+    def test_as_dict_should_return_dict(self):
+        # Given
+        laps = Laps(start_time=dt.datetime(2021, 1, 1, 0), duration_hours=3)
+        record = Record(laps=laps, rainfall_mm=1.0)
+
+        # When
+        result = record.to_dict()
+
+        # Then
+        assert result == {
+            "laps": {
+                "start_time": dt.datetime(2021, 1, 1, 0),
+                "duration_hours": 3,
+            },
+            "rainfall_mm": 1.0,
+        }

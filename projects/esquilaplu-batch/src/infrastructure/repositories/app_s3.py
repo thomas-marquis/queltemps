@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 
 import boto3
 import pandas as pd
@@ -37,7 +38,28 @@ class AppS3Repository(AppRepository):
         return all_saved_dt
 
     def save_many_records(self, records: list[Record]) -> None:
-        raise NotImplementedError()
+        # group records by day
+        records_by_date: dict[dt.date, list[Record]] = {}
+        for record in records:
+            if (current_date := record.laps.start_time.date()) not in records_by_date:
+                records_by_date[current_date] = []
+            records_by_date[current_date].append(record)
+
+        # serialize each day records in json
+        for date, day_records in records_by_date.items():
+            filename = f"{date.strftime('%Y-%m-%d')}.json"
+            key = f"{self._root_key}/processed/records/{filename}"
+            content = {
+                "data": [record.to_dict() for record in day_records],
+            }
+            # serialize date as string
+            serialized_content = json.dumps(content, default=str)
+
+            self._s3_client.put_object(
+                Bucket=self._aws_s3_bucket,
+                Key=key,
+                Body=serialized_content,
+            )
 
     def save_raw_dataset(self, dataset: pd.DataFrame, laps: Laps) -> None:
         data_to_save = dataset.copy()
