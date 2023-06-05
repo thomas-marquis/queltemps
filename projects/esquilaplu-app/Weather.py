@@ -31,7 +31,7 @@ class WeatherRepository:
         )
 
     def load_dataset(self, dataset_id: str) -> pd.DataFrame:
-        data_key = f"{self._root_key}/{dataset_id}.csv"
+        data_key = f"{self._root_key}/raw/meteofrance/{dataset_id}.csv"
         data_object = self._s3_client.get_object(Bucket=self._aws_s3_bucket, Key=data_key)
         data = pd.read_csv(data_object["Body"], sep=";", header=0, parse_dates=["date"])
 
@@ -39,11 +39,9 @@ class WeatherRepository:
 
     def list_datasets(self) -> list[str]:
         response = self._s3_client.list_objects_v2(Bucket=self._aws_s3_bucket, Prefix=self._root_key)
-        return [
-            content["Key"].lstrip(f"{self._root_key}/")
-            for content in response["Contents"]
-            if content["Key"] != self._root_key
-        ]
+        return [content["Key"].lstrip(f"{self._root_key}/raw/meteofrance/") for content in response["Contents"] if content["Key"] != self._root_key]
+
+
 
 
 class WeatherChunk:
