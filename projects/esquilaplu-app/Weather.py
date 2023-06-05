@@ -38,8 +38,8 @@ class WeatherRepository:
         return data
 
     def list_datasets(self) -> list[str]:
-        response = self._s3_client.list_objects_v2(Bucket=self._aws_s3_bucket, Prefix=self._root_key)
-        return [content["Key"].lstrip(f"{self._root_key}/raw/meteofrance/") for content in response["Contents"] if content["Key"] != self._root_key]
+        response = self._s3_client.list_objects_v2(Bucket=self._aws_s3_bucket, Prefix=f"{self._root_key}/raw/meteofrance")
+        return [content["Key"].lstrip(f"{self._root_key}/raw/meteofrance/") for content in response["Contents"] if content["Key"] != f"{self._root_key}/raw/meteofrance"]
 
 
 
@@ -88,7 +88,7 @@ class WeatherChunkFactory:
         self._repository = WeatherRepository()
 
     def get_chunk_by_date_and_time(self, datetime: dt.datetime) -> WeatherChunk:
-        data = self._repository.load_dataset(f"{datetime.date().isoformat()}-{datetime.hour}")
+        data = self._repository.load_dataset(f"{datetime.date().isoformat()}-{datetime.strftime('%H')}")
         return WeatherChunk(data, datetime)
 
     def get_chunks_by_date(self, date: dt.date) -> list[WeatherChunk]:
