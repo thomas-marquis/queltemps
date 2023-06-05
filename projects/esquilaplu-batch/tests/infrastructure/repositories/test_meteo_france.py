@@ -59,6 +59,31 @@ class TestMeteoFranceRepository:
                 },
             )
 
+        def test_should_call_requests_get_with_correct_time_id(self, repository, mock_requests):
+            # Given
+            laps = Laps(start_time=dt.datetime(2021, 1, 29, 21, 0, 0), duration_hours=3)
+
+            # When
+            repository.collect_record(laps)
+
+            # Then
+            mock_requests.get.assert_called_once_with(
+                "https://donneespubliques.meteofrance.fr/donnees_libres/Txt/Synop/synop.2021013000.csv",
+                headers={
+                    "Referer": (
+                        "https://donneespubliques.meteofrance.fr/?fond=donnee_libre&prefixe=Txt%2FSynop%2Fsynop&"
+                        "extension=csv&date=20210130&reseau=00"
+                    ),
+                    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0",
+                    "Host": "donneespubliques.meteofrance.fr",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Accept-Language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3",
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                },
+            )
+
         def test_should_raise_collection_error_when_response_status_error(self, repository, mock_requests):
             # Given
             mock_requests.get.return_value = MagicMock(

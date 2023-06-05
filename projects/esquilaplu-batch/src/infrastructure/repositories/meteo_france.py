@@ -1,6 +1,8 @@
 import datetime as dt
 import io
 import logging
+import random
+import time
 
 import pandas as pd
 import requests
@@ -20,9 +22,10 @@ class MeteoFranceRepository(WeatherDataRepository):
         self._app_repository = app_repository
 
     def collect_record(self, laps: Laps) -> Record:
-        hour = laps.start_time.hour + laps.duration_hours
-        date_id = laps.start_time.strftime("%Y%m%d")
-        time_id = f"{date_id}{hour:02d}"
+        end_time = laps.start_time + dt.timedelta(hours=laps.duration_hours)
+        hour = end_time.strftime("%H")
+        date_id = end_time.strftime("%Y%m%d")
+        time_id = f"{date_id}{hour}"
 
         url = f"https://donneespubliques.meteofrance.fr/donnees_libres/Txt/Synop/synop.{time_id}.csv"
         headers = {
@@ -47,9 +50,12 @@ class MeteoFranceRepository(WeatherDataRepository):
             self._logger.error(f"Error while collecting weather data: {e}")
             raise WeatherCollectionError()
 
-        dataframe = pd.read_csv(io.StringIO(response.text), sep=";", header=0)
+        try:
+            dataframe = pd.read_csv(io.StringIO(response.text), sep=";", header=0)
+        except Exception:
+            print(time_id)
         dataframe = dataframe.replace("mq", 0)
-        dataframe["date"] = laps.start_time + dt.timedelta(hours=laps.duration_hours)
+        dataframe["date"] = end_time
         dataframe = dataframe.astype(
             {
                 "date": "datetime64[ns]",
@@ -62,5 +68,8 @@ class MeteoFranceRepository(WeatherDataRepository):
         )
 
         self._app_repository.save_raw_dataset(dataset=dataframe, laps=laps)
+
+        wait_sec: float = random.uniform(0.2, 1.5)
+        time.sleep(wait_sec)
 
         return MeteoFranceRecordFactory.from_dataframe(dataframe, laps_duration_hr=3)

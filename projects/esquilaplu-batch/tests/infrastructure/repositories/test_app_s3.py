@@ -55,6 +55,7 @@ class TestAppS3Repository:
                     {"Key": "esquilaplu/raw/meteofrance/2021-01-01-04.csv"},
                     {"Key": "esquilaplu/raw/meteofrance/2021-01-02-03.csv"},
                 ],
+                "KeyCount": 3,
             }
 
             # When
@@ -65,6 +66,18 @@ class TestAppS3Repository:
                 Laps(start_time=dt.datetime(2021, 1, 1, 1), duration_hours=3),
                 Laps(start_time=dt.datetime(2021, 1, 2, 0), duration_hours=3),
             ]
+
+        def test_should_returns_empty_list_when_no_file_exists_in_s3(self, repository, mock_s3_client):
+            # Given
+            mock_s3_client.list_objects_v2.return_value = {
+                "KeyCount": 0,
+            }
+
+            # When
+            result = repository.get_available_laps_since(dt.datetime(2021, 1, 3, 1))
+
+            # Then
+            assert result == []
 
     class TestSaveRawDataset:
         def test_should_save_dataframe_to_s3_as_csv(self, repository, mock_s3_client):

@@ -71,6 +71,10 @@ class AppS3Repository(AppRepository):
         response = self._s3_client.list_objects_v2(
             Bucket=self._aws_s3_bucket, Prefix=f"{self._root_key}/raw/meteofrance"
         )
+
+        if response.get("KeyCount", 0) == 0:
+            return []
+
         return [
             content["Key"].lstrip(f"{self._root_key}/")
             for content in response["Contents"]
