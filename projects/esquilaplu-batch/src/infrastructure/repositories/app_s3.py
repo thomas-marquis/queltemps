@@ -38,19 +38,13 @@ class AppS3Repository(AppRepository):
         return all_saved_dt
 
     def save_many_records(self, records: list[Record]) -> None:
-        # group records by day
-        records_by_date: dict[dt.date, list[Record]] = {}
-        for record in records:
-            if (current_date := record.laps.start_time.date()) not in records_by_date:
-                records_by_date[current_date] = []
-            records_by_date[current_date].append(record)
-
         # serialize each day records in json
-        for date, day_records in records_by_date.items():
-            filename = f"{date.strftime('%Y-%m-%d')}.json"
-            key = f"{self._root_key}/processed/records/{filename}"
+        for record in records:
+            start_time = record.laps.start_time
+            filepath = f"{start_time.strftime('%Y/%m/%d/%H')}.json"
+            key = f"{self._root_key}/processed/records/{filepath}"
             content = {
-                "data": [record.to_dict() for record in day_records],
+                "data": record.to_dict(),
             }
             # serialize date as string
             serialized_content = json.dumps(content, default=str)
