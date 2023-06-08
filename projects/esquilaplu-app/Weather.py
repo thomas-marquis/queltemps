@@ -44,7 +44,7 @@ class WeatherRepository:
 
 
 
-class WeatherChunk:
+class WeatherRecord:
     def __init__(self, dataset: pd.DataFrame, datetime: dt.datetime) -> None:
         data = dataset.copy()[dataset["numer_sta"] == STATION_ID]
 
@@ -53,11 +53,11 @@ class WeatherChunk:
 
     @property
     def end_datetime(self) -> dt.datetime:
-        return self._datetime
+        return self._datetime + dt.timedelta(hours=3)
 
     @property
     def start_datetime(self) -> dt.datetime:
-        return self._datetime - dt.timedelta(hours=3)
+        return self._datetime #- dt.timedelta(hours=3)
 
     @property
     def rain_mm_last_1h(self) -> float:
@@ -80,27 +80,38 @@ class WeatherChunk:
         return self._get_float_value("rr24")
 
     def _get_float_value(self, column_name: str) -> float:
-        return float(self._dataset[column_name].values[0])
+        value = float(self._dataset[column_name].values[0])
+        return value if value > 0 else 0
+    
+    @staticmethod
+    def get_icon(rainfall_mm: float) -> str:
+        if rainfall_mm <= 0:
+            return "🌞"
+        elif rainfall_mm < 5:
+            return "🌦"
+        else:
+            return "🌧"
 
 
-class WeatherChunkFactory:
+class WeatherRecordFactory:
     def __init__(self) -> None:
         self._repository = WeatherRepository()
 
-    def get_chunk_by_date_and_time(self, datetime: dt.datetime) -> WeatherChunk:
+    def get_record_by_date_and_time(self, datetime: dt.datetime) -> WeatherRecord:
         data = self._repository.load_dataset(f"{datetime.date().isoformat()}-{datetime.strftime('%H')}")
-        return WeatherChunk(data, datetime)
+        return WeatherRecord(data, datetime)
 
-    def get_chunks_by_date(self, date: dt.date) -> list[WeatherChunk]:
+    def get_records_by_date(self, date: dt.date) -> list[WeatherRecord]:
         all_saved_data_files = self._repository.list_datasets()
-        all_saved_data_files = [file for file in all_saved_data_files if file.startswith(date.isoformat())]
+        all_saved_data_files = [file for file in all_saved_data_files if file and (self._parse_datetime_from_filename(file)).date() == date]
+        
         all_saved_data_files.sort()
 
-        chunks = []
+        records = []
         for file in all_saved_data_files:
-            chunks.append(self.get_chunk_by_date_and_time(self._parse_datetime_from_filename(file)))
+            records.append(self.get_record_by_date_and_time(self._parse_datetime_from_filename(file)))
 
-        return chunks
+        return records
 
     def list_saved_dataset_datetimes(self) -> list[dt.datetime]:
         all_saved_data_files = self._repository.list_datasets()
@@ -113,46 +124,74 @@ class WeatherChunkFactory:
 
     @staticmethod
     def _parse_datetime_from_filename(filename: str) -> dt.datetime:
-        return dt.datetime.strptime(filename, "%Y-%m-%d-%H.csv")
+        return dt.datetime.strptime(filename, "%Y-%m-%d-%H.csv") - dt.timedelta(hours=3)
 
 
 class WeatherCalculator:
     @staticmethod
-    def compute_rainfall(chunks: list[WeatherChunk]) -> float:
-        return sum([chunk.rain_mm_last_3h for chunk in chunks])
+    def compute_rainfall(records: list[WeatherRecord]) -> float:
+        return sum([rec.rain_mm_last_3h for rec in records])
 
 
 def application():
-    st.header("🌧 Esquilaplu")
+    st.header("Esquilaplu")
     st.write("Bienvenue sur Esquilaplu, l'application qui permet de savoir quand et combien il a plu !")
 
-    factory = WeatherChunkFactory()
-    available_chunks = factory.list_saved_dataset_datetimes()
+    factory = WeatherRecordFactory()
+    available_records = factory.list_saved_dataset_datetimes()
+    
+    st.session_state.selected_date = st.session_state.selected_date if "selected_date" in st.session_state else available_records[-1].date()
+    
+    cols = st.columns(4)
+    with cols[0]:
+        if st.button("Jour précédent", disabled=st.session_state.selected_date == available_records[0].date()):
+            st.session_state.selected_date -= dt.timedelta(days=1)
+        
+    with cols[1]:
+        if st.button("Jour suivant", disabled=st.session_state.selected_date == available_records[-1].date()):
+            st.session_state.selected_date += dt.timedelta(days=1)
+            
+    with cols[2]:
+        if st.button("Le plus récent", disabled=st.session_state.selected_date == available_records[-1].date()):
+            st.session_state.selected_date = available_records[-1].date()
 
-    selection: dt.date = st.date_input(
-        "Pluviométrie pour une date",
-        available_chunks[-1],
-        min_value=available_chunks[0],
-        max_value=available_chunks[-1],
+    if st.session_state.selected_date > available_records[-1].date():
+        st.session_state.selected_date = available_records[-1].date()
+    elif st.session_state.selected_date < available_records[0].date():
+        st.session_state.selected_date = available_records[0].date()
+
+    with cols[3]:
+        st.session_state.selected_date: dt.date = st.date_input(
+            "Choisi une date",
+            st.session_state.selected_date,
+            min_value=available_records[0],
+            max_value=available_records[-1],
+        )
+    
+    filtered_records = factory.get_records_by_date(st.session_state.selected_date)
+    
+    if not filtered_records:
+        st.warning("Aucune donnée disponible pour cette date... Essaye la veille !")
+        return
+
+    day_rainfall = WeatherCalculator.compute_rainfall(filtered_records)
+    selected_date_formatted = st.session_state.selected_date.strftime("%A %d %B %Y")
+    
+    cols = st.columns(2)
+    with cols[0]:
+        st.subheader(f"{selected_date_formatted}")
+    with cols[1]:
+        st.metric("Pluviométrie du jour", f"{WeatherRecord.get_icon(day_rainfall)} {day_rainfall:.2f} mm")
+
+    df = pd.DataFrame(
+        {
+            "Date": [rec.start_datetime.strftime("%d/%m/%Y") for rec in filtered_records],
+            "Heure": [f"de {rec.start_datetime.hour}h à {rec.end_datetime.hour}h" for rec in filtered_records],
+            "Pluviométrie": [f"{rec.get_icon(rec.rain_mm_last_3h)} {rec.rain_mm_last_3h:.2f} mm" for rec in filtered_records],
+        },
+        columns=["Date", "Heure", "Pluviométrie"],
     )
-
-    chunks = factory.get_chunks_by_date(selection)
-
-    st.metric(f"Pluviométrie pour le {selection}", f"{WeatherCalculator.compute_rainfall(chunks):.2f} mm")
-
-    st.table(
-        [
-            ("Date", "Heure", "Pluviométrie"),
-            *[
-                (
-                    chunk.start_datetime.date(),
-                    f"{chunk.start_datetime.hour}h - {chunk.end_datetime.hour}h",
-                    f"{chunk.rain_mm_last_3h:.2f} mm",
-                )
-                for chunk in chunks
-            ],
-        ]
-    )
+    st.table(df)
 
 
 if __name__ == "__main__":
